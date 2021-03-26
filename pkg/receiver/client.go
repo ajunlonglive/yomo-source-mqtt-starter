@@ -115,7 +115,7 @@ func (c *client) readLoop() {
 
 			packet, err := packets.ReadPacket(nc)
 			if err != nil {
-				log.Error("read packet error: ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+				//log.Error("read packet error", zap.Error(err), zap.String("ClientID", c.info.clientID))
 				msg := &Message{
 					client: c,
 					packet: DisconnectedPacket,
@@ -146,15 +146,15 @@ func ProcessMessage(msg *Message) {
 	}
 
 	switch ca.(type) {
-	case *packets.ConnackPacket:
-	case *packets.ConnectPacket:
+	//case *packets.ConnackPacket:
+	//case *packets.ConnectPacket:
 	case *packets.PublishPacket:
 		packet := ca.(*packets.PublishPacket)
 		c.ProcessPublish(packet)
-	case *packets.UnsubackPacket:
+	//case *packets.UnsubackPacket:
 	case *packets.PingreqPacket:
 		c.ProcessPing()
-	case *packets.PingrespPacket:
+	//case *packets.PingrespPacket:
 	case *packets.DisconnectPacket:
 		c.Close()
 	default:
@@ -174,11 +174,11 @@ func (c *client) ProcessPublish(packet *packets.PublishPacket) {
 func (c *client) processClientPublish(packet *packets.PublishPacket) {
 	topic := packet.TopicName
 
-	// CJB: handle message by user
+	// CJB: handler message by user
 	// c.info.clientID
 	// c.info.username
 	//
-	c.receiver.handle(topic, packet.Payload)
+	c.receiver.handler(topic, packet.Payload)
 }
 
 func (c *client) ProcessPing() {

@@ -27,7 +27,7 @@ type Message struct {
 }
 
 type Receiver struct {
-	handle func(topic string, payload []byte)
+	handler func(topic string, payload []byte)
 
 	id         string
 	clients    sync.Map
@@ -58,26 +58,28 @@ func NewReceiver(config *Config) (*Receiver, error) {
 
 }
 
-func (b *Receiver) Start(handle func(topic string, payload []byte)) {
+func (b *Receiver) Start(handler func(topic string, payload []byte)) {
+
 	if b == nil {
 		log.Error("receiver is null")
 		return
 	}
 
-	if handle == nil {
-		log.Error("handle is null")
+	if handler == nil {
+		log.Error("handler is null")
 		return
 	}
 
 	// 注册处理器
-	b.handle = handle
+	b.handler = handler
 
 	log.Debug("#1 [Start] config: %v", zap.Any("config", b.config))
 
-	//listen client over tcp
-	if b.config.Port != "" {
-		go b.StartClientListening(false)
+	if len(b.config.ServerAddr) == 0 {
+		panic("must set ServerAddr")
 	}
+
+	go b.StartClientListening(false)
 
 }
 
@@ -86,12 +88,12 @@ func (b *Receiver) StartClientListening(Tls bool) {
 	var l net.Listener
 
 	for {
-		hp := b.config.Host + ":" + b.config.Port
+		hp := b.config.ServerAddr
 		l, err = net.Listen("tcp", hp)
-		log.Info("start listening client on ", zap.String("host-port", hp))
+		log.Info("start listening client", zap.String("host-port", hp))
 
 		if err != nil {
-			log.Error("Error listening on: %v ", zap.Error(err))
+			log.Error("Error listening", zap.Error(err))
 			time.Sleep(1 * time.Second)
 		} else {
 			break // successfully listening
@@ -140,7 +142,7 @@ func (b *Receiver) handleConnection(typ int, conn net.Conn) {
 		return
 	}
 
-	log.Info("read connect from ", zap.String("clientID", msg.ClientIdentifier))
+	//log.Info("read connect from ", zap.String("clientID", msg.ClientIdentifier))
 
 	connack := packets.NewControlPacket(packets.Connack).(*packets.ConnackPacket)
 	connack.SessionPresent = msg.CleanSession

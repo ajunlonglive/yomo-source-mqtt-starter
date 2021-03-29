@@ -55,7 +55,8 @@ func main() {
 		counter = atomic.AddInt64(&counter, 1)
 
 		payload := fmt.Sprintf("{\"noise\":%v}", counter)
-		go pub(client, topic, payload)
+		//go pub(client, topic, payload)
+		pub(client, topic, payload)
 
 		fmt.Printf("%v: Publish counter=%d, topic=%v, payload=%v\n", time.Now().Format("2006-01-02 15:04:05"), counter, topic, payload)
 		time.Sleep(time.Duration(interval) * time.Millisecond)
@@ -63,7 +64,13 @@ func main() {
 }
 
 func pub(client mqtt.Client, topic string, payload interface{}) {
-	if token := client.Publish(topic, 1, false, payload); token.Wait() && token.Error() != nil {
-		log.Printf("yomo-source Publish error: %s \n", token.Error())
+	for {
+		// fix: https://github.com/yomorun/yomo-source-mqtt-starter/issues/1
+		if token := client.Publish(topic, 1, false, payload); token.Wait() && token.Error() != nil {
+			log.Printf("yomo-source Publish error: %s \n", token.Error())
+			time.Sleep(time.Duration(interval) * time.Millisecond)
+			continue
+		}
+		break
 	}
 }

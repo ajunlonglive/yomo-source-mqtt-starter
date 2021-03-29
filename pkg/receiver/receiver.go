@@ -73,14 +73,16 @@ func (b *Receiver) Start(handler func(topic string, payload []byte)) {
 	// 注册处理器
 	b.handler = handler
 
-	log.Debug("#1 [Start] config: %v", zap.Any("config", b.config))
-
 	if len(b.config.ServerAddr) == 0 {
 		panic("must set ServerAddr")
 	}
 
 	go b.StartClientListening(false)
 
+	log.Debug("start listening",
+		zap.String("ServerAddr", b.config.ServerAddr),
+		zap.Int("Worker", b.config.Worker),
+		zap.Bool("Debug", b.config.Debug))
 }
 
 func (b *Receiver) StartClientListening(Tls bool) {
@@ -102,8 +104,9 @@ func (b *Receiver) StartClientListening(Tls bool) {
 	tmpDelay := 10 * comm.ACCEPT_MIN_SLEEP
 	for {
 		conn, err := l.Accept()
-
-		log.Debug("#2 [StartClientListening] Accept err ", zap.Error(err))
+		if err != nil {
+			log.Error("Accept Accept err.", zap.Error(err))
+		}
 
 		if err != nil {
 			if ne, ok := err.(net.Error); ok && ne.Temporary() {
@@ -173,22 +176,11 @@ func (b *Receiver) handleConnection(typ int, conn net.Conn) {
 		return
 	}
 
-	willmsg := packets.NewControlPacket(packets.Publish).(*packets.PublishPacket)
-	if msg.WillFlag {
-		willmsg.Qos = msg.WillQos
-		willmsg.TopicName = msg.WillTopic
-		willmsg.Retain = msg.WillRetain
-		willmsg.Payload = msg.WillMessage
-		willmsg.Dup = msg.Dup
-	} else {
-		willmsg = nil
-	}
 	info := info{
 		clientID:  msg.ClientIdentifier,
 		username:  msg.Username,
 		password:  msg.Password,
 		keepalive: msg.Keepalive,
-		willMsg:   willmsg,
 	}
 
 	c := &client{

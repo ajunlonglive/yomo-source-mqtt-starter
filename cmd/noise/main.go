@@ -3,24 +3,21 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"sync"
-	"time"
-
-	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
 
 	"github.com/yomorun/y3-codec-golang"
-
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
+	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
 	"github.com/yomorun/yomo/pkg/quic"
 
 	"github.com/yomorun/yomo-source-mqtt-starter/internal/env"
 )
 
 var (
-	zipperAddr = env.GetString("YOMO_SOURCE_MQTT_ZIPPER_ADDR", "localhost:9999")
-	serverAddr = env.GetString("YOMO_SOURCE_MQTT_SERVER_ADDR", "localhost:1883")
+	zipperAddr  = env.GetString("YOMO_SOURCE_MQTT_ZIPPER_ADDR", "localhost:9999")
+	serverAddr  = env.GetString("YOMO_SOURCE_MQTT_SERVER_ADDR", "0.0.0.0:1883")
+	serverDebug = env.GetBool("YOMO_SOURCE_MQTT_SERVER_DEBUG", false)
 
 	stream = createStream()
 	mutex  sync.Mutex
@@ -33,7 +30,7 @@ type NoiseData struct {
 }
 
 func handler(topic string, payload []byte) {
-	fmt.Printf("%v:\t receive: topic=%v, payload=%v\n", time.Now().Format("2006-01-02 15:04:05"), topic, string(payload))
+	log.Printf("receive: topic=%v, payload=%v\n", topic, string(payload))
 
 	// get data from MQTT
 	var raw map[string]int32
@@ -64,7 +61,7 @@ func handler(topic string, payload []byte) {
 }
 
 func main() {
-	receiver.Run(handler, &receiver.Config{ServerAddr: serverAddr, Debug: true})
+	receiver.Run(handler, &receiver.Config{ServerAddr: serverAddr, Debug: serverDebug})
 }
 
 func createStream() quic.Stream {

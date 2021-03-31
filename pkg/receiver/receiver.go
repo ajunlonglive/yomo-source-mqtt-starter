@@ -10,7 +10,6 @@ import (
 	"github.com/yomorun/yomo-source-mqtt-starter/internal/comm"
 
 	"github.com/yomorun/yomo-source-mqtt-starter/internal/pool"
-	"github.com/yomorun/yomo-source-mqtt-starter/internal/sessions"
 
 	"go.uber.org/zap"
 
@@ -29,11 +28,11 @@ type Message struct {
 type Receiver struct {
 	handler func(topic string, payload []byte)
 
-	id         string
-	clients    sync.Map
-	config     *Config
-	sessionMgr *sessions.Manager
-	wpool      *pool.WorkerPool
+	id      string
+	clients sync.Map
+	config  *Config
+	//sessionMgr *sessions.Manager
+	wpool *pool.WorkerPool
 }
 
 func NewReceiver(config *Config) (*Receiver, error) {
@@ -47,12 +46,12 @@ func NewReceiver(config *Config) (*Receiver, error) {
 		log = logger.Debug().Named("receiver")
 	}
 
-	var err error
-	b.sessionMgr, err = sessions.NewManager("mem")
-	if err != nil {
-		log.Error("new session manager error ", zap.Error(err))
-		return nil, err
-	}
+	//var err error
+	//b.sessionMgr, err = sessions.NewManager("mem")
+	//if err != nil {
+	//	log.Error("new session manager error ", zap.Error(err))
+	//	return nil, err
+	//}
 
 	return b, nil
 
@@ -92,7 +91,7 @@ func (b *Receiver) StartClientListening(Tls bool) {
 	for {
 		hp := b.config.ServerAddr
 		l, err = net.Listen("tcp", hp)
-		log.Info("start listening client", zap.String("host-port", hp))
+		log.Info("start listening client", zap.String("host-port", hp), zap.String("id", b.id))
 
 		if err != nil {
 			log.Error("Error listening", zap.Error(err))
@@ -192,29 +191,33 @@ func (b *Receiver) handleConnection(typ int, conn net.Conn) {
 
 	c.init()
 
-	err = b.getSession(c, msg, connack)
-	if err != nil {
-		log.Error("get session error: ", zap.String("clientID", c.info.clientID))
-		return
-	}
+	//err = b.getSession(c, msg, connack)
+	//if err != nil {
+	//	log.Error("get session error: ", zap.String("clientID", c.info.clientID))
+	//	return
+	//}
 
-	cid := c.info.clientID
+	//cid := c.info.clientID
 
-	var exist bool
-	var old interface{}
-
-	switch typ {
-	case CLIENT:
-		old, exist = b.clients.Load(cid)
-		if exist {
-			log.Error("client exist, close old...", zap.String("clientID", c.info.clientID))
-			ol, ok := old.(*client)
-			if ok {
-				ol.Close()
-			}
-		}
-		b.clients.Store(cid, c)
-	}
+	//var exist bool
+	//var old interface{}
+	//
+	//switch typ {
+	//case CLIENT:
+	//	old, exist = b.clients.Load(cid)
+	//	if exist {
+	//		ol, ok := old.(*client)
+	//		if ok {
+	//			log.Warn("client exist, close old...",
+	//				zap.Any("clientID", c.info.clientID),
+	//				zap.Int("status,", ol.status),
+	//				zap.Error(ol.ctx.Err()))
+	//			ol.cancelFunc()
+	//			ol.Close()
+	//		}
+	//	}
+	//	b.clients.Store(cid, c)
+	//}
 
 	c.readLoop()
 }
@@ -230,12 +233,12 @@ func (b *Receiver) removeClient(c *client) {
 }
 
 func (b *Receiver) SubmitWork(clientId string, msg *Message) {
-	if b.wpool == nil {
-		b.wpool = pool.New(b.config.Worker)
-	}
-
-	b.wpool.Submit(clientId, func() {
-		ProcessMessage(msg)
-	})
-
+	//if b.wpool == nil {
+	//	b.wpool = pool.New(b.config.Worker)
+	//}
+	//
+	//b.wpool.Submit(clientId, func() {
+	//	ProcessMessage(msg)
+	//})
+	ProcessMessage(msg)
 }

@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/eclipse/paho.mqtt.golang/packets"
-	"github.com/yomorun/yomo-source-mqtt-starter/internal/sessions"
 )
 
 const (
@@ -33,7 +32,7 @@ type client struct {
 	status     int
 	ctx        context.Context
 	cancelFunc context.CancelFunc
-	session    *sessions.Session
+	//session    *sessions.Session
 }
 
 type info struct {

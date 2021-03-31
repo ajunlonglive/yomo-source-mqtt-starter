@@ -7,8 +7,9 @@ import (
 	"sync"
 
 	"github.com/yomorun/y3-codec-golang"
-	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
+
+	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
 	"github.com/yomorun/yomo/pkg/quic"
 
 	"github.com/yomorun/yomo-source-mqtt-starter/internal/env"
@@ -45,17 +46,30 @@ func handler(topic string, payload []byte) {
 	sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
 
 	mutex.Lock()
-	defer mutex.Unlock()
+	//_, err = stream.Write(sendingBuf)
+	//if err != nil {
+	//	log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
+	//	err = stream.Close()
+	//	if err != nil {
+	//		log.Printf("stream.Close error: %v\n", err)
+	//	}
+	//	stream = createStream()
+	//}
 
-	_, err = stream.Write(sendingBuf)
-	if err != nil {
-		log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
-		err = stream.Close()
+	n := 0
+	l := len(sendingBuf)
+	for n < l {
+		n, err = stream.Write(sendingBuf[n:l])
 		if err != nil {
-			log.Printf("stream.Close error: %v\n", err)
+			log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
+			err = stream.Close()
+			if err != nil {
+				log.Printf("stream.Close error: %v\n", err)
+			}
+			stream = createStream()
 		}
-		stream = createStream()
 	}
+	mutex.Unlock()
 
 	log.Printf("write: sendingBuf=%#v\n", sendingBuf)
 }

@@ -1,2 +1,3 @@
-# yomo-source-mqtt-starter
-receive MQTT data and convert it into a YoMo stream
+# mqtt-api-compatible yomo-source
+
+MQTT-API-Compatible YoMo server, receive MQTT data and transfer data over QUIC, implement real-time IoT analytics by YoMo

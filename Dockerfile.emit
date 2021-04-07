@@ -8,6 +8,6 @@ RUN cp  /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  && \
 
 WORKDIR $GOPATH/src/github.com/yomorun/yomo-source-mqtt-starter
 COPY . .
-RUN https_proxy=http://172.16.101.49:1078 go get -d -v ./...
+RUN go get -d -v ./...
 
 CMD ["sh", "-c", "go run ./cmd/emitter/main.go"]

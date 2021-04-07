@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/yomorun/y3-codec-golang"
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
@@ -16,12 +17,16 @@ import (
 )
 
 var (
-	zipperAddr  = env.GetString("YOMO_SOURCE_MQTT_ZIPPER_ADDR", "localhost:9999")
-	serverAddr  = env.GetString("YOMO_SOURCE_MQTT_SERVER_ADDR", "0.0.0.0:1883")
-	serverDebug = env.GetBool("YOMO_SOURCE_MQTT_SERVER_DEBUG", false)
+	zipperAddr          = env.GetString("YOMO_SOURCE_MQTT_ZIPPER_ADDR", "localhost:9999")
+	serverAddr          = env.GetString("YOMO_SOURCE_MQTT_SERVER_ADDR", "0.0.0.0:1883")
+	serverDebug         = env.GetBool("YOMO_SOURCE_MQTT_SERVER_DEBUG", false)
+	streamErrorMax      = env.GetInt("YOMO_SOURCE_MQTT_STREAM_ERROR_MAX", 20)
+	streamErrorInterval = env.GetInt("YOMO_SOURCE_MQTT_STREAM_ERROR_INTERVAL", 1000)
 
-	stream = createStream()
-	mutex  sync.Mutex
+	client       quic.Client
+	stream       = createStream()
+	mutexStream  sync.Mutex
+	mutexHandler sync.Mutex
 )
 
 type NoiseData struct {
@@ -45,17 +50,7 @@ func handler(topic string, payload []byte) {
 	data := NoiseData{Noise: noise, Time: utils.Now(), From: utils.IpAddr()}
 	sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
 
-	mutex.Lock()
-	//_, err = stream.Write(sendingBuf)
-	//if err != nil {
-	//	log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
-	//	err = stream.Close()
-	//	if err != nil {
-	//		log.Printf("stream.Close error: %v\n", err)
-	//	}
-	//	stream = createStream()
-	//}
-
+	mutexHandler.Lock()
 	n := 0
 	l := len(sendingBuf)
 	for n < l {
@@ -67,9 +62,10 @@ func handler(topic string, payload []byte) {
 				log.Printf("stream.Close error: %v\n", err)
 			}
 			stream = createStream()
+			break
 		}
 	}
-	mutex.Unlock()
+	mutexHandler.Unlock()
 
 	log.Printf("write: sendingBuf=%#v\n", sendingBuf)
 }
@@ -81,23 +77,36 @@ func main() {
 func createStream() quic.Stream {
 	var (
 		err    error
-		client quic.Client
+		errs   = 0
 		stream quic.Stream
 	)
 
-	for {
-		client, err = quic.NewClient(zipperAddr)
-		if err != nil {
-			log.Printf("NewClient error: %v, addr=%v\n", err, zipperAddr)
-			continue
+	mutexStream.Lock()
+	defer mutexStream.Unlock()
+
+CLIENT:
+	if client == nil {
+		for {
+			client, err = quic.NewClient(zipperAddr)
+			if err != nil {
+				log.Printf("NewClient error: %v, addr=%v\n", err, zipperAddr)
+				continue
+			}
+			break
 		}
-		break
 	}
 
 	for {
 		stream, err = client.CreateStream(context.Background())
 		if err != nil {
 			log.Printf("CreateStream error: %v\n", err)
+			errs++
+			if errs > streamErrorMax {
+				// if greater than the number of errors, a new connection is established
+				client = nil
+				goto CLIENT
+			}
+			time.Sleep(time.Duration(streamErrorInterval) * time.Millisecond)
 			continue
 		}
 		break

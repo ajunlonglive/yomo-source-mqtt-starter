@@ -156,7 +156,7 @@ func ProcessMessage(msg *Message) {
 			puback := packets.NewControlPacket(packets.Puback).(*packets.PubackPacket)
 			puback.MessageID = msg.packet.Details().MessageID
 			if err := c.WriterPacket(puback); err != nil {
-				log.Error("send response error, ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+				log.Error("send response error", zap.Error(err), zap.String("ClientID", c.info.clientID))
 				return
 			}
 		case 2:

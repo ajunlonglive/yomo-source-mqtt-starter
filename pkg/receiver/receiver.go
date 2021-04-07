@@ -240,5 +240,5 @@ func (b *Receiver) SubmitWork(clientId string, msg *Message) {
 	//b.wpool.Submit(clientId, func() {
 	//	ProcessMessage(msg)
 	//})
-	ProcessMessage(msg)
+	go ProcessMessage(msg)
 }

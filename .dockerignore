@@ -1,0 +1,8 @@
+**/*.bak
+**/*.md
+!README.md
+.temp
+.test
+.git
+bin
+Dockerfile.noise

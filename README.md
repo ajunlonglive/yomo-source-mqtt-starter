@@ -1,5 +1,5 @@
 # yomo-source-mqtt-starter
-Receive MQTT messages and convert them to the YoMo protocol for transmission to Serverless Service.
+MQTT-API-Compatible YoMo server, receive MQTT data and transfer data over QUIC, implement real-time IoT analytics by YoMo.
 
 ## 🚀 Getting Started
 
@@ -13,3 +13,5 @@ This example shows how to use the component reference method to make it easier t
 go mod init source
 go get github.com/yomorun/yomo-source-mqtt-starter
 ```
+
+# mqtt-api-compatible yomo-source

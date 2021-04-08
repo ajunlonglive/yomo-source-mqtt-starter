@@ -6,3 +6,4 @@
 .git
 bin
 Dockerfile.noise
+Dockerfile.emit

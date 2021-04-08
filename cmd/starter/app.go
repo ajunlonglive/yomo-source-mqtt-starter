@@ -1,24 +1,3 @@
-# mqtt-api-compatible yomo-source
-[MQTT](https://mqtt.org/mqtt-specification/) protocol-enabled IoT devices connect to YoMo-Source and efficiently transfer data in real-time as QUIC streams to the YCloud cloud or other nodes where YoMo-Zipper is deployed.
-
-![schema](./docs/schema.jpg)
-
-## 🚀 Getting Started
-
-### Example (noise)
-
-This example shows how to use the component reference method to make it easier to receive MQTT messages using starter and convert them to the YoMo protocol for transmission to the Zipper service.
-
-#### 1. Init Project
-
-```bash
-go mod init source
-go get github.com/yomorun/yomo-source-mqtt-starter
-```
-
-#### 2. create app.go
-
-```go
 package main
 
 import (
@@ -81,15 +60,3 @@ func main() {
 
 	receiver.Run(handler, &receiver.Config{ServerAddr: os.Getenv("YOMO_SOURCE_MQTT_SERVER_ADDR")})
 }
-```
-
-- YOMO_SOURCE_MQTT_ZIPPER_ADDR: Set the service address of the remote yomo-zipper.
-- YOMO_SOURCE_MQTT_SERVER_ADDR: Set the external service address of this yomo-source.
-- The data to be sent needs to be encoded using y3-codec.
-
-#### 3. run
-
-```go
-YOMO_SOURCE_MQTT_ZIPPER_ADDR=localhost:9999 YOMO_SOURCE_MQTT_SERVER_ADDR=0.0.0.0:1883 go run app.go
-```
-

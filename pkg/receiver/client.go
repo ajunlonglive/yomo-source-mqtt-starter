@@ -33,15 +33,17 @@ type client struct {
 	ctx        context.Context
 	cancelFunc context.CancelFunc
 	//session    *sessions.Session
+
+	mutexHandler sync.Mutex
 }
 
 type info struct {
-	clientID  string
-	username  string
-	password  []byte
-	keepalive uint16
-	localIP   string
-	remoteIP  string
+	clientID  string // 客户端的ID
+	username  string // 验证的用户名
+	password  []byte // 验证的密码
+	keepalive uint16 // 是否保持连接
+	localIP   string // 本地IP
+	remoteIP  string // 远程连接IP
 }
 
 var (
@@ -101,7 +103,7 @@ func (c *client) readLoop() {
 			//add read timeout
 			if keepAlive > 0 {
 				if err := nc.SetReadDeadline(time.Now().Add(timeOut)); err != nil {
-					log.Error("set read timeout error: ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+					log.Error("set read timeout error", zap.Error(err), zap.String("ClientID", c.info.clientID))
 					msg := &Message{
 						client: c,
 						packet: DisconnectedPacket,
@@ -133,14 +135,14 @@ func (c *client) readLoop() {
 }
 
 func ProcessMessage(msg *Message) {
-	c := msg.client
+	client := msg.client
 	ca := msg.packet
 	if ca == nil {
 		return
 	}
 
-	if c.typ == CLIENT {
-		log.Debug("Debug Recv message:", zap.String("message type", reflect.TypeOf(msg.packet).String()[9:]), zap.String("ClientID", c.info.clientID))
+	if client.typ == CLIENT {
+		log.Debug("Debug Recv message", zap.String("message type", reflect.TypeOf(msg.packet).String()[9:]), zap.String("clientID", client.info.clientID))
 	}
 
 	switch ca.(type) {
@@ -148,22 +150,22 @@ func ProcessMessage(msg *Message) {
 	//case *packets.ConnectPacket:
 	case *packets.PublishPacket:
 		packet := ca.(*packets.PublishPacket)
-		c.ProcessPublish(packet)
+		client.ProcessPublish(packet)
 
 		// fix: https://github.com/yomorun/yomo-source-mqtt-starter/issues/1
 		switch packet.Qos {
 		case 1:
 			puback := packets.NewControlPacket(packets.Puback).(*packets.PubackPacket)
 			puback.MessageID = msg.packet.Details().MessageID
-			if err := c.WriterPacket(puback); err != nil {
-				log.Error("send response error", zap.Error(err), zap.String("ClientID", c.info.clientID))
+			if err := client.WriterPacket(puback); err != nil {
+				log.Error("send response error", zap.Error(err), zap.String("ClientID", client.info.clientID))
 				return
 			}
 		case 2:
 			pubcomp := packets.NewControlPacket(packets.Pubcomp).(*packets.PubcompPacket)
 			pubcomp.MessageID = msg.packet.Details().MessageID
-			if err := c.WriterPacket(pubcomp); err != nil {
-				log.Error("send pubcomp error, ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+			if err := client.WriterPacket(pubcomp); err != nil {
+				log.Error("send pubcomp error, ", zap.Error(err), zap.String("ClientID", client.info.clientID))
 				return
 			}
 		}
@@ -171,38 +173,38 @@ func ProcessMessage(msg *Message) {
 	case *packets.PubackPacket:
 		puback := packets.NewControlPacket(packets.Puback).(*packets.PubackPacket)
 		puback.MessageID = msg.packet.Details().MessageID
-		if err := c.WriterPacket(puback); err != nil {
-			log.Error("send puback error, ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+		if err := client.WriterPacket(puback); err != nil {
+			log.Error("send puback error, ", zap.Error(err), zap.String("ClientID", client.info.clientID))
 			return
 		}
 	case *packets.PubrecPacket:
 		pubrec := packets.NewControlPacket(packets.Pubrec).(*packets.PubrecPacket)
 		pubrec.MessageID = msg.packet.Details().MessageID
-		if err := c.WriterPacket(pubrec); err != nil {
-			log.Error("send pubrec error, ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+		if err := client.WriterPacket(pubrec); err != nil {
+			log.Error("send pubrec error, ", zap.Error(err), zap.String("ClientID", client.info.clientID))
 			return
 		}
 	case *packets.PubrelPacket:
 		pubrel := packets.NewControlPacket(packets.Pubrel).(*packets.PubrelPacket)
 		pubrel.MessageID = msg.packet.Details().MessageID
-		if err := c.WriterPacket(pubrel); err != nil {
-			log.Error("send pubrel error, ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+		if err := client.WriterPacket(pubrel); err != nil {
+			log.Error("send pubrel error, ", zap.Error(err), zap.String("ClientID", client.info.clientID))
 			return
 		}
 	case *packets.PubcompPacket:
 		pubcomp := packets.NewControlPacket(packets.Pubcomp).(*packets.PubcompPacket)
 		pubcomp.MessageID = msg.packet.Details().MessageID
-		if err := c.WriterPacket(pubcomp); err != nil {
-			log.Error("send pubcomp error, ", zap.Error(err), zap.String("ClientID", c.info.clientID))
+		if err := client.WriterPacket(pubcomp); err != nil {
+			log.Error("send pubcomp error, ", zap.Error(err), zap.String("ClientID", client.info.clientID))
 			return
 		}
 	case *packets.PingreqPacket:
-		c.ProcessPing()
+		client.ProcessPing()
 	case *packets.DisconnectPacket:
-		c.Close()
+		client.Close()
 	default:
 		log.Warn("Recv unknown message.......",
-			zap.String("ClientID", c.info.clientID),
+			zap.String("ClientID", client.info.clientID),
 			zap.Any("TypeOfPacket", reflect.TypeOf(ca).Kind()))
 	}
 
@@ -228,7 +230,25 @@ func (c *client) processClientPublish(packet *packets.PublishPacket) {
 		zap.String("username", c.info.username),
 		zap.Any("topic", topic))
 
-	c.receiver.handler(topic, packet.Payload)
+	// 错误重连
+	c.mutexHandler.Lock()
+	writer := c.receiver.sourceStream.GetWriter()
+	err := c.receiver.handler(topic, packet.Payload, writer)
+	if err != nil {
+		if se, ok := err.(*SourceError); ok {
+			log.Error("stream write error", zap.Error(se), zap.String("topic", topic))
+			// 先关闭原来的流
+			e := c.receiver.sourceStream.Close()
+			if e != nil {
+				log.Error("sourceStream Close", zap.Error(e), zap.String("topic", topic))
+			}
+			// 创建新的流或者连接
+			c.receiver.sourceStream.Create()
+		} else {
+			log.Error("handler error", zap.Error(err), zap.String("topic", topic))
+		}
+	}
+	c.mutexHandler.Unlock()
 }
 
 func (c *client) ProcessPing() {

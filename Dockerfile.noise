@@ -1,25 +1,7 @@
-FROM golang:buster
-
-RUN apt-get update && \
-    apt-get install nano iputils-ping telnet net-tools -y
-
-RUN wget http://gael.roualland.free.fr/ifstat/ifstat-1.1.tar.gz && \
-    tar -zxvf ifstat-1.1.tar.gz && \
-    cd ifstat-1.1 && \
-    ./configure && \
-    make && \
-    make install && \
-    cd .. && \
-    rm ifstat-1.1.tar.gz && \
-    rm -rf ifstat-1.1
-
-RUN cp  /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  && \
-    echo 'Asia/Shanghai'  > /etc/timezone
+FROM yomorun/quic-mqtt:latest
 
 WORKDIR $GOPATH/src/github.com/yomorun/yomo-source-mqtt-starter
 COPY . .
 RUN go get -d -v ./...
-
-EXPOSE 1883
 
 CMD ["sh", "-c", "go run ./cmd/noise/main.go"]

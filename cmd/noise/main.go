@@ -33,14 +33,10 @@ func main() {
 		data := NoiseData{Noise: noise, Time: utils.Now(), From: utils.IpAddr()}
 		sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
 
-		n := 0
-		l := len(sendingBuf)
-		for n < l {
-			n, err = writer.Write(sendingBuf[n:l])
-			if err != nil {
-				log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
-				return err
-			}
+		_, err = writer.Write(sendingBuf)
+		if err != nil {
+			log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
+			return err
 		}
 
 		log.Printf("write: sendingBuf=%#v\n", sendingBuf)

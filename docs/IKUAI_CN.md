@@ -81,7 +81,7 @@ go get github.com/yomorun/yomo-source-mqtt-starter
 YOMO_SOURCE_MQTT_ZIPPER_ADDR={Your Zipper Addr}:9999 YOMO_SOURCE_MQTT_SERVER_ADDR=0.0.0.0:1883 go run main.go
 ```
 
-虽然我们可以本地跑起来，但是有一个问题：**我们该如何部署在边缘端？**众所周知，路由器是私有网络和公有网络的桥梁，如果有一个足够强大的路由器设置能跑起这样的服务该多好，那么所有的数据都可以在发送给云端数据前被接收和转换了；另外，如果这个路由器还能支持Docker容器化部署，那就完美了，可以不用考虑边缘端设备的环境兼容问题，经一番查找后终于找到了这款**[爱快路由器](https://www.ikuai8.com/)**能瞒足这个需求，非常幸运，接下来我们就一起看看如何使用爱快路由器部署我们的**yomo-source**实现[**yomo**](https://github.com/yomorun/yomo)在边缘端的落地吧！
+虽然我们可以本地跑起来，但是有一个问题：我们该如何部署在边缘端？众所周知，路由器是私有网络和公有网络的桥梁，如果有一个足够强大的路由器设置能跑起这样的服务该多好，那么所有的数据都可以在发送给云端数据前被接收和转换了；另外，如果这个路由器还能支持Docker容器化部署，那就完美了，可以不用考虑边缘端设备的环境兼容问题，经一番查找后终于找到了这款**[爱快路由器](https://www.ikuai8.com/)**能瞒足这个需求，非常幸运，接下来我们就一起看看如何使用爱快路由器部署我们的yomo-source实现[**yomo**](https://github.com/yomorun/yomo)在边缘端的落地吧！
 
 
 
@@ -164,7 +164,7 @@ docker save yomorun/noise-source:latest -o noise-source.tar
 
 
 
-这种方式是上传最快的方式，不过对于真实部署来说，能过镜像库就更为实用些。
+这种方式是上传最快的方式，不过对于真实部署来说，通过镜像库就更为实用些。
 
 ### 镜像库下载
 

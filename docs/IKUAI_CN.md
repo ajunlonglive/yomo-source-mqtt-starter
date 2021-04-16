@@ -160,7 +160,7 @@ docker save yomorun/noise-source:latest -o noise-source.tar
 
 经过稍许等待，就提示上传成功，显示如下成功的镜像了：
 
-![ikuai_docker_image](/Users/chenjunbiao/work/yomorun/yomo-source-mqtt-starter/docs/ikuai_docker_image.jpg)
+![ikuai_docker_image](./ikuai_docker_image.jpg)
 
 <center>图3</center>
 
@@ -197,14 +197,14 @@ docker push yomorun/noise-source:latest
 
 填写如下图信息：
 
-![ikuai_docker_run1](/Users/chenjunbiao/work/yomorun/yomo-source-mqtt-starter/docs/ikuai_docker_run1.jpg)
+![ikuai_docker_run1](./ikuai_docker_run1.jpg)
 
 <center>图4</center>
 
-![ikuai_docker_run2](/Users/chenjunbiao/work/yomorun/yomo-source-mqtt-starter/docs/ikuai_docker_run2.jpg)
+![ikuai_docker_run2](./ikuai_docker_run2.jpg)
 
 <center>图5</center>
 
 回到容器列表界面，可以看到运行中的容器了
 
-![ikuai_docker_run3](/Users/chenjunbiao/work/yomorun/yomo-source-mqtt-starter/docs/ikuai_docker_run3.jpg)
+![ikuai_docker_run3](./ikuai_docker_run3.jpg)

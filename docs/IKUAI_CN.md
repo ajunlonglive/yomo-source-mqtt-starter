@@ -91,9 +91,9 @@ YOMO_SOURCE_MQTT_ZIPPER_ADDR={Your Zipper Addr}:9999 YOMO_SOURCE_MQTT_SERVER_ADD
 
 先来看看爱快路由器的美照吧
 
-![ikuai_product](/Users/chenjunbiao/work/yomorun/yomo-source-mqtt-starter/docs/ikuai_product.jpeg)
+![ikuai_product](./ikuai_product.jpeg)
 
-<center>图1</center>
+
 
 这款路由器的大小跟普通路由器大小差不多，但是功能却很强大，自定义能力很强，具体怎么用的细节这里就不介绍了，可以看看他们的[官网](https://www.ikuai8.com/)，这里主要还是关心如何容器化部署我们的服务。
 
@@ -105,7 +105,7 @@ YOMO_SOURCE_MQTT_ZIPPER_ADDR={Your Zipper Addr}:9999 YOMO_SOURCE_MQTT_SERVER_ADD
 
 ![ikuai_docker_welcome](./ikuai_docker_welcome.jpg)
 
-<center>图2</center>
+
 
 ## 添加镜像
 
@@ -162,7 +162,7 @@ docker save yomorun/noise-source:latest -o noise-source.tar
 
 ![ikuai_docker_image](./ikuai_docker_image.jpg)
 
-<center>图3</center>
+
 
 这种方式是上传最快的方式，不过对于真实部署来说，能过镜像库就更为实用些。
 
@@ -199,12 +199,13 @@ docker push yomorun/noise-source:latest
 
 ![ikuai_docker_run1](./ikuai_docker_run1.jpg)
 
-<center>图4</center>
+
 
 ![ikuai_docker_run2](./ikuai_docker_run2.jpg)
 
-<center>图5</center>
+
 
 回到容器列表界面，可以看到运行中的容器了
 
 ![ikuai_docker_run3](./ikuai_docker_run3.jpg)
+

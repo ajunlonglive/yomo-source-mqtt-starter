@@ -3,17 +3,12 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/yomorun/y3-codec-golang"
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
 
-	"github.com/yomorun/yomo-source-mqtt-starter/internal/env"
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
-)
-
-var (
-	zipperAddr = env.GetString("YOMO_SOURCE_MQTT_ZIPPER_ADDR", "localhost:9999")
-	serverAddr = env.GetString("YOMO_SOURCE_MQTT_SERVER_ADDR", "0.0.0.0:1883")
 )
 
 type NoiseData struct {
@@ -52,8 +47,8 @@ func main() {
 		return nil
 	}
 
-	receiver.CreateRunner(zipperAddr).
-		WithServerAddr(serverAddr).
+	receiver.CreateRunner(os.Getenv("YOMO_SOURCE_MQTT_ZIPPER_ADDR")).
+		WithServerAddr(os.Getenv("YOMO_SOURCE_MQTT_SERVER_ADDR")).
 		WithHandler(handler).
 		Run()
 }

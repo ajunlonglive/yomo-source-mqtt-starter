@@ -21,18 +21,19 @@ func main() {
 	handler := func(topic string, payload []byte, writer receiver.ISourceWriter) error {
 		log.Printf("receive: topic=%v, payload=%v\n", topic, string(payload))
 
-		// get data from MQTT
+		// 1.get data from MQTT
 		var raw map[string]int32
 		err := json.Unmarshal(payload, &raw)
 		if err != nil {
 			log.Printf("Unmarshal payload error:%v", err)
 		}
 
-		// generate y3-codec format
+		// 2.generate y3-codec format
 		noise := float32(raw["noise"])
 		data := NoiseData{Noise: noise, Time: utils.Now(), From: utils.IpAddr()}
 		sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
 
+		// 3.send data to remote workflow engine
 		_, err = writer.Write(sendingBuf)
 		if err != nil {
 			log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)

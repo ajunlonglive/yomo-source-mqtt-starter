@@ -3,15 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/yomorun/y3-codec-golang"
+	y3 "github.com/yomorun/y3-codec-golang"
 	"github.com/yomorun/yomo/pkg/rx"
 )
 
-// NoiseDataKey represents the Tag of a Y3 encoded data packet
+// NoiseDataKey represents the Tag of a Y3 encoded data packet.
 const NoiseDataKey = 0x10
+
+// ThresholdSingleValue is the threshold of a single value.
+const ThresholdSingleValue = 16
+
+// ThresholdAverageValue is the threshold of the average value after a sliding window.
+const ThresholdAverageValue = 13
 
 // NoiseData represents the structure of data
 type NoiseData struct {
@@ -20,33 +25,22 @@ type NoiseData struct {
 	From  string  `y3:"0x13"`
 }
 
-var (
-	index int64 = 0
-	count int64 = 0
-	diff  int64 = 0
-	mu    sync.Mutex
-)
-
-var printer = func(_ context.Context, i interface{}) (interface{}, error) {
+// Print every value and alert for value greater than ThresholdSingleValue
+var computePeek = func(_ context.Context, i interface{}) (interface{}, error) {
 	value := i.(NoiseData)
 	rightNow := time.Now().UnixNano() / int64(time.Millisecond)
 	fmt.Println(fmt.Sprintf("[%s] %d > value: %f ⚡️=%dms", value.From, value.Time, value.Noise, rightNow-value.Time))
 
-	mu.Lock()
-	index++
-	count++
-	diff = diff + rightNow - value.Time
-	if count >= 50 {
-		fmt.Println(fmt.Sprintf("index=[%d] count=[%d] > average: ⚡️=%dms", index, count, diff/count))
-		count = 0
-		diff = 0
+	// Compute peek value, if greater than ThresholdSingleValue, alert
+	if value.Noise >= ThresholdSingleValue {
+		fmt.Println(fmt.Sprintf("❗ value: %f reaches the threshold %d! 𝚫=%f", value.Noise, ThresholdSingleValue, value.Noise-ThresholdSingleValue))
 	}
-	mu.Unlock()
 
-	return value.Noise, nil
+	return value, nil
 }
 
-var callback = func(v []byte) (interface{}, error) {
+// Unserialize data to `NoiseData` struct, transfer to next process
+var decode = func(v []byte) (interface{}, error) {
 	var mold NoiseData
 	err := y3.ToObject(v, &mold)
 	if err != nil {
@@ -60,10 +54,9 @@ var callback = func(v []byte) (interface{}, error) {
 func Handler(rxstream rx.RxStream) rx.RxStream {
 	stream := rxstream.
 		Subscribe(NoiseDataKey).
-		OnObserve(callback).
-		Map(printer).
-		StdOut().
-		Encode(0x11)
+		OnObserve(decode).
+		Map(computePeek).
+		Encode(0x10)
 
 	return stream
 }

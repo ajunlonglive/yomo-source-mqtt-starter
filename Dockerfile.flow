@@ -13,7 +13,8 @@ WORKDIR $GOPATH/src/github.com/yomorun/yomo-source-mqtt-starter
 COPY . .
 RUN echo '\r\n replace github.com/yomorun/yomo v1.0.0 => ../yomo' >> go.mod
 RUN go get -d -v ./...
+WORKDIR $GOPATH/src/github.com/yomorun/yomo-source-mqtt-starter/cmd/flow/
 
 EXPOSE 4242/udp
 
-CMD ["sh", "-c", "yomo run ./cmd/flow/app.go -p 4242"]
+CMD ["sh", "-c", "yomo run app.go -p 4242"]

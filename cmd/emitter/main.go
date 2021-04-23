@@ -13,7 +13,7 @@ import (
 var (
 	brokerAddr = env.GetString("YOMO_SOURCE_MQTT_BROKER_ADDR", "tcp://localhost:1883")
 	topic      = env.GetString("YOMO_SOURCE_MQTT_PUB_TOPIC", "NOISE")
-	interval   = env.GetInt("YOMO_SOURCE_MQTT_PUB_INTERVAL", 100)
+	interval   = env.GetInt("YOMO_SOURCE_MQTT_PUB_INTERVAL", 1000)
 	counter    int64
 )
 

@@ -3,5 +3,6 @@ FROM yomorun/quic-mqtt:latest
 WORKDIR $GOPATH/src/github.com/yomorun/yomo-source-mqtt-starter
 COPY . .
 RUN go get -d -v ./...
+WORKDIR $GOPATH/src/github.com/yomorun/yomo-source-mqtt-starter/cmd/emitter/
 
-CMD ["sh", "-c", "go run ./cmd/emitter/main.go"]
+CMD ["sh", "-c", "go run main.go"]

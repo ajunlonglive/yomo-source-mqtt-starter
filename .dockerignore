@@ -5,5 +5,3 @@
 .test
 .git
 bin
-Dockerfile.noise
-Dockerfile.emit

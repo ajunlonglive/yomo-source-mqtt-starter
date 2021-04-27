@@ -14,11 +14,11 @@
 
 为了接收支持MQTT协议的IoT设备的传输需求，我们实现了[quic-mqtt](https://github.com/yomorun/yomo-source-mqtt-starter)的兼容转换，只要设备支持MQTT协议，便可以开发一个简单的应用来接收该设备发送出来的数据，并可无缝接入YoMo框架体系中。
 
-本文将以噪声传感器为例，看看如何落地这一部署？
+本文将以**[噪声传感器](https://github.com/yomorun/example-noise)**为例，看看如何落地这一部署？
 
 ## 开发一个应用
 
-我们首先要开发一个应用来接收设备发送出来的MQTT协议数据，这里我们已经开发出一个项目[yomo-source-mqtt-starter](https://github.com/yomorun/yomo-source-mqtt-starter)以方便地构建一个应用，具体可以看看这个[Noise例子](https://github.com/yomorun/yomo-source-mqtt-starter/blob/main/README_CN.md)的代码：`main.go`
+我们首先要开发一个应用来接收设备发送出来的MQTT协议数据，这里我们已经开发出一个项目[yomo-source-noise-example](https://github.com/yomorun/yomo-source-noise-example)以方便地构建一个接收MQTT数据接收器，具体可以看看这个例子的代码：`main.go`
 
 ```go
 package main
@@ -44,18 +44,19 @@ func main() {
 	handler := func(topic string, payload []byte, writer receiver.ISourceWriter) error {
 		log.Printf("receive: topic=%v, payload=%v\n", topic, string(payload))
 
-		// get data from MQTT
+		// 1.get data from MQTT
 		var raw map[string]int32
 		err := json.Unmarshal(payload, &raw)
 		if err != nil {
 			log.Printf("Unmarshal payload error:%v", err)
 		}
 
-		// generate y3-codec format
+		// 2.generate y3-codec format
 		noise := float32(raw["noise"])
 		data := NoiseData{Noise: noise, Time: utils.Now(), From: utils.IpAddr()}
 		sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
 
+		// 3.send data to remote workflow engine
 		_, err = writer.Write(sendingBuf)
 		if err != nil {
 			log.Printf("stream.Write error: %v, sendingBuf=%#x\n", err, sendingBuf)
@@ -84,8 +85,6 @@ YOMO_SOURCE_MQTT_ZIPPER_ADDR={Your Zipper Addr}:9999 YOMO_SOURCE_MQTT_SERVER_ADD
 ```
 
 虽然我们可以本地跑起来，但是有一个问题：我们该如何部署在边缘端？众所周知，路由器是私有网络和公有网络的桥梁，如果有一个足够强大的路由器设置能跑起这样的服务该多好，那么所有的数据都可以在发送给云端数据前被接收和转换了；另外，如果这个路由器还能支持Docker容器化部署，那就完美了，可以不用考虑边缘端设备的环境兼容问题，经一番查找后终于找到了这款**[爱快路由器](https://www.ikuai8.com/)**能瞒足这个需求，非常幸运，接下来我们就一起看看如何使用爱快路由器部署我们的yomo-source实现[**yomo**](https://github.com/yomorun/yomo)在边缘端的落地吧！
-
-
 
 # 爱快容器化部署
 
@@ -180,8 +179,6 @@ docker save yomorun/noise-source:latest -o noise-source.tar
 docker login -u yomorun -p {PWD}
 docker push yomorun/noise-source:latest
 ```
-
-注意：上传到hub.docker.com后会有一定时间的延时更新
 
 #### 下载镜像
 

@@ -14,7 +14,7 @@
 
 为了接收支持MQTT协议的IoT设备的传输需求，我们实现了[quic-mqtt](https://github.com/yomorun/yomo-source-mqtt-starter)的兼容转换，只要设备支持MQTT协议，便可以开发一个简单的应用来接收该设备发送出来的数据，并可无缝接入YoMo框架体系中。
 
-本文将以**[噪声传感器](https://github.com/yomorun/example-noise)**为例，看看如何落地这一部署？
+本文将以[**噪声传感器**](https://github.com/yomorun/example-noise)为例，看看如何落地这一部署？
 
 ## 开发一个应用
 

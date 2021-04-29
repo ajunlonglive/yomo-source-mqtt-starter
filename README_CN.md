@@ -2,7 +2,7 @@
 
 通过兼容[MQTT](https://mqtt.org/mqtt-specification/)的API协议，YoMo-Source与支持该协议的IoT设备进行连接，并实时高效地把数据以QUIC流的形式传输到YCloud云或者其它部署了YoMo-Zipper的节点。
 
-![schema](./docs/schema.jpg)
+![schema](https://github.com/yomorun/yomo-source-mqtt-starter/blob/main/docs/schema.jpg?raw=true)
 
 ## 🚀 快速入门
 
@@ -87,4 +87,10 @@ func main() {
 ```bash
 YOMO_SOURCE_MQTT_ZIPPER_ADDR=localhost:9999 YOMO_SOURCE_MQTT_SERVER_ADDR=0.0.0.0:1883 go run app.go
 ```
+
+## 如何构建镜像
+
+官方提供了一个基础镜像：`yomorun/quic-mqtt:latest`，使用这个镜像可以轻松地部署[YoMo](https://github.com/yomorun/yomo) Source 服务， 以接收来自MQTT协议设备的数据。详细的构建步骤请查看 [yomorun/quic-mqtt](https://hub.docker.com/repository/docker/yomorun/quic-mqtt).
+
+
 

@@ -30,7 +30,7 @@ func main() {
 
 - **YOMO_SOURCE_MQTT_ZIPPER_ADDR**: service address for workflow engine zipper, You can see the architecture diagram:
 
-  ![schema](./schema.jpg)
+  ![schema](https://github.com/yomorun/yomo-source-mqtt-starter/raw/main/docs/schema.jpg)
 
 ## write a Dockerfile file
 

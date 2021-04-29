@@ -1,7 +1,7 @@
 # mqtt-api-compatible yomo-source
 [MQTT](https://mqtt.org/mqtt-specification/) protocol-enabled IoT devices connect to YoMo-Source and efficiently transfer data in real-time as QUIC streams to the YCloud cloud or other nodes where YoMo-Zipper is deployed.
 
-![schema](./docs/schema.jpg)
+![schema](https://github.com/yomorun/yomo-source-mqtt-starter/blob/main/docs/schema.jpg?raw=true)
 
 ## 🚀 Getting Started
 
@@ -80,4 +80,8 @@ func main() {
 ```go
 YOMO_SOURCE_MQTT_ZIPPER_ADDR=localhost:9999 YOMO_SOURCE_MQTT_SERVER_ADDR=0.0.0.0:1883 go run app.go
 ```
+
+## How to build the Image
+
+Official base image is `yomorun/quic-mqtt:latest`, using this image you can easily deploy the [YoMo](https://github.com/yomorun/yomo) Source service for receiving data from MQTT protocol devices. For detailed build steps, please see [yomorun/quic-mqtt](https://hub.docker.com/repository/docker/yomorun/quic-mqtt).
 

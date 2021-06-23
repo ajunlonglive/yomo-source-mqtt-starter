@@ -27,7 +27,7 @@ type Message struct {
 
 type Receiver struct {
 	handler      func(topic string, payload []byte, writer ISourceWriter) error
-	sourceStream ISourceStream
+	sourceClient ISourceClient
 
 	id      string
 	clients sync.Map
@@ -50,7 +50,7 @@ func NewReceiver(config *Config) (*Receiver, error) {
 	return b, nil
 }
 
-func (b *Receiver) Start(handler func(topic string, payload []byte, writer ISourceWriter) error, sourceStream ISourceStream) {
+func (b *Receiver) Start(handler func(topic string, payload []byte, writer ISourceWriter) error, sourceStream ISourceClient) {
 
 	if b == nil {
 		panic("receiver is null")
@@ -63,10 +63,10 @@ func (b *Receiver) Start(handler func(topic string, payload []byte, writer ISour
 	b.handler = handler
 
 	if sourceStream == nil {
-		panic("please register ISourceStream")
+		panic("please register ISourceClient")
 	}
 	// 注册ISourceStream
-	b.sourceStream = sourceStream
+	b.sourceClient = sourceStream
 
 	if len(b.config.ServerAddr) == 0 {
 		panic("must set ServerAddr")

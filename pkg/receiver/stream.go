@@ -1,14 +1,15 @@
 package receiver
 
 import (
-	"context"
 	"io"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/yomorun/yomo/pkg/quic"
+	cl "github.com/yomorun/yomo/pkg/client"
 )
 
 type ISourceWriter interface {
@@ -32,71 +33,72 @@ func NewSourceWriter(w io.Writer) ISourceWriter {
 	return &sourceWriter{w: w}
 }
 
-type ISourceStream interface {
+type ISourceClient interface {
 	GetWriter() ISourceWriter
-	Create() quic.Stream
+	Create() cl.SourceClient
 	Close() error
+	Retry()
 	Init()
 }
 
-type sourceStreamImpl struct {
+type sourceClientImpl struct {
 	zipperAddr string
+	appName    string
+	cli        cl.SourceClient
 
-	client      quic.Client
-	stream      quic.Stream
-	mutexStream sync.Mutex
+	mutexCli sync.Mutex
 
-	streamErrorMax      int
-	streamErrorInterval int
+	clientErrorInterval int
 }
 
-func NewSourceStream(zipperAddr string) ISourceStream {
+func NewSourceStream(appName string, zipperAddr string) ISourceClient {
 	if len(zipperAddr) == 0 {
 		panic("please provider addr of zipper")
 	}
 
-	return &sourceStreamImpl{
+	return &sourceClientImpl{
 		zipperAddr:          zipperAddr,
-		streamErrorMax:      10,
-		streamErrorInterval: 1000,
+		appName:             appName,
+		clientErrorInterval: 1000,
 	}
 }
 
-func (s *sourceStreamImpl) Init() {
-	if s.stream == nil {
-		s.stream = s.Create()
+func (s *sourceClientImpl) Init() {
+	if s.cli == nil {
+		s.cli = s.Create()
 	}
 }
 
-func (s *sourceStreamImpl) Close() error {
-	return s.stream.Close()
+func (s *sourceClientImpl) Close() error {
+	return s.cli.Close()
 }
 
-func (s *sourceStreamImpl) GetWriter() ISourceWriter {
-	if s.stream == nil {
-		s.stream = s.Create()
-		return NewSourceWriter(s.stream)
+func (s *sourceClientImpl) Retry() {
+	s.cli.Retry()
+}
+
+func (s *sourceClientImpl) GetWriter() ISourceWriter {
+	if s.cli == nil {
+		s.cli = s.Create()
+		return NewSourceWriter(s.cli)
 	}
 
-	return NewSourceWriter(s.stream)
+	return NewSourceWriter(s.cli)
 }
 
-func (s *sourceStreamImpl) Create() quic.Stream {
-	var (
-		err  error
-		errs = 0
-	)
+func (s *sourceClientImpl) Create() cl.SourceClient {
+	var err error
 
-	s.mutexStream.Lock()
-	defer s.mutexStream.Unlock()
+	s.mutexCli.Lock()
+	defer s.mutexCli.Unlock()
 
-CLIENT:
-	if s.client == nil {
+	if s.cli == nil {
 		for {
-			s.client, err = quic.NewClient(s.zipperAddr)
+			ip, port := s.splitZipperAddr()
+			s.cli, err = cl.NewSource(s.appName).Connect(ip, port)
 			if err != nil {
 				log.Error("NewClient error", zap.String("zipperAddr", s.zipperAddr), zap.Error(err))
-				time.Sleep(time.Duration(s.streamErrorInterval) * time.Millisecond)
+				time.Sleep(time.Duration(s.clientErrorInterval) * time.Millisecond)
 				continue
 			}
 			log.Info("connect to zipper", zap.String("zipperAddr", s.zipperAddr))
@@ -104,22 +106,12 @@ CLIENT:
 		}
 	}
 
-	for {
-		s.stream, err = s.client.CreateStream(context.Background())
-		if err != nil {
-			log.Error("CreateStream error", zap.Error(err))
-			errs++
-			if errs > s.streamErrorMax {
-				// if greater than the number of errors, a new connection is established
-				s.client = nil
-				goto CLIENT
-			}
-			time.Sleep(time.Duration(s.streamErrorInterval) * time.Millisecond)
-			continue
-		}
-		log.Info("create stream", zap.String("zipperAddr", s.zipperAddr), zap.Any("StreamID", s.stream.StreamID()))
-		break
-	}
+	return s.cli
+}
 
-	return s.stream
+func (s *sourceClientImpl) splitZipperAddr() (ip string, port int) {
+	ss := strings.Split(s.zipperAddr, ":")
+	ip = ss[0]
+	port, _ = strconv.Atoi(ss[1])
+	return
 }

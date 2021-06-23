@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	receiver.CreateRunner(os.Getenv("YOMO_SOURCE_MQTT_ZIPPER_ADDR")).Run()
+	receiver.CreateRunner("yomo-source", os.Getenv("YOMO_SOURCE_MQTT_ZIPPER_ADDR")).Run()
 }

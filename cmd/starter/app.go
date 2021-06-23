@@ -52,7 +52,7 @@ func main() {
 		return nil
 	}
 
-	receiver.CreateRunner(os.Getenv("YOMO_SOURCE_MQTT_ZIPPER_ADDR")).
+	receiver.CreateRunner("yomo-source", os.Getenv("YOMO_SOURCE_MQTT_ZIPPER_ADDR")).
 		WithServerAddr(os.Getenv("YOMO_SOURCE_MQTT_SERVER_ADDR")).
 		WithHandler(handler).
 		Run()

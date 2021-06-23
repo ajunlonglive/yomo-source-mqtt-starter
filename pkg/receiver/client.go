@@ -232,18 +232,18 @@ func (c *client) processClientPublish(packet *packets.PublishPacket) {
 
 	// 错误重连
 	c.mutexHandler.Lock()
-	writer := c.receiver.sourceStream.GetWriter()
+	writer := c.receiver.sourceClient.GetWriter()
 	err := c.receiver.handler(topic, packet.Payload, writer)
 	if err != nil {
 		if se, ok := err.(*SourceError); ok {
 			log.Error("stream write error", zap.Error(se), zap.String("topic", topic))
 			// 先关闭原来的流
-			e := c.receiver.sourceStream.Close()
+			e := c.receiver.sourceClient.Close()
 			if e != nil {
-				log.Error("sourceStream Close", zap.Error(e), zap.String("topic", topic))
+				log.Error("sourceClient Close", zap.Error(e), zap.String("topic", topic))
 			}
-			// 创建新的流或者连接
-			c.receiver.sourceStream.Create()
+			// 重新连接
+			c.receiver.sourceClient.Retry()
 		} else {
 			log.Error("handler error", zap.Error(err), zap.String("topic", topic))
 		}

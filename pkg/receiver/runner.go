@@ -14,17 +14,17 @@ type Runner struct {
 	handler func(topic string, payload []byte, writer ISourceWriter) error
 	config  *Config
 
-	stream ISourceStream
+	stream ISourceClient
 }
 
-func CreateRunner(zipperAddr string) *Runner {
+func CreateRunner(appName string, zipperAddr string) *Runner {
 	rb := &Runner{
 		handler: func(topic string, payload []byte, writer ISourceWriter) error {
 			fmt.Printf("%v:\t receive: topic=%v, payload=%v\n", time.Now().Format("2006-01-02 15:04:05"), topic, string(payload))
 			fmt.Printf("%v:\t please provide your handler...\n", time.Now().Format("2006-01-02 15:04:05"))
 			return nil
 		},
-		stream: NewSourceStream(zipperAddr),
+		stream: NewSourceStream(appName, zipperAddr),
 	}
 
 	rb.config = DefaultConfig
@@ -47,7 +47,7 @@ func (b *Runner) WithDebug(debug bool) *Runner {
 	return b
 }
 
-func (b *Runner) WithStream(stream ISourceStream) *Runner {
+func (b *Runner) WithStream(stream ISourceClient) *Runner {
 	b.stream = stream
 	return b
 }

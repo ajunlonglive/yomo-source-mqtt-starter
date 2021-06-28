@@ -9,6 +9,6 @@ require (
 	github.com/segmentio/fasthash v1.0.3
 	github.com/stretchr/testify v1.7.0
 	github.com/yomorun/y3-codec-golang v1.7.0
-	github.com/yomorun/yomo v1.3.5
+	github.com/yomorun/yomo v1.3.6
 	go.uber.org/zap v1.17.0
 )

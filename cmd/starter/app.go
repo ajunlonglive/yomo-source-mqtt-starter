@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
-
-	"github.com/yomorun/y3-codec-golang"
 )
 
 type NoiseData struct {
-	Noise float32 `y3:"0x11"` // Noise value
-	Time  int64   `y3:"0x12"` // Timestamp (ms)
-	From  string  `y3:"0x13"` // Source IP
+	Noise float32 `json:"noise"` // Noise value
+	Time  int64   `json:"time"` // Timestamp (ms)
+	From  string  `json:"from"` // Source IP
 }
 
 func main() {
@@ -28,10 +26,10 @@ func main() {
 			return err
 		}
 
-		// generate y3-codec format
+		// generate json-codec format
 		noise := float32(raw["noise"])
 		data := NoiseData{Noise: noise, Time: time.Now().UnixNano() / 1e6, From: "127.0.0.1"}
-		sendingBuf, err := y3.NewCodec(0x10).Marshal(data)
+		sendingBuf, err := json.Marshal(data)
 		if err != nil {
 			return err
 		}

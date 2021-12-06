@@ -61,7 +61,7 @@
 图中描述了流程如下：
 
 - 在边缘端的`设备网关`定时向`噪声传感器`收集数据，并向我们的Source服务发送MQTT协议的数据。
-- Source服务接收到数据后转换成Y3的编码，以QUIC流的方式向云端的工作流引擎Zipper传输数据，这步利用了YoMo的可靠、安全和低时延的优势，同时数据具体更高的编码压缩率。
+- Source服务接收到数据后转换成 JSON 的编码，以QUIC流的方式向云端的工作流引擎Zipper传输数据，这步利用了YoMo的可靠、安全和低时延的优势，同时数据具体更高的编码压缩率。
 - 在Zipper工作流的编排下，数据会先流向数据处理Flow进行数据计算和采样处理。
 - 经过Flow处理后的数据再次被工作流调度到数据输出的Sink服务，该服务以WebSocket的方式对外提供查询服务。
 - 一个展示网站通过WebSocket连接到Sink上展示实时的噪声数据和延时值。
@@ -94,16 +94,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/yomorun/y3-codec-golang"
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
-
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
 )
 
 type NoiseData struct {
-	Noise float32 `y3:"0x11"` // Noise value
-	Time  int64   `y3:"0x12"` // Timestamp (ms)
-	From  string  `y3:"0x13"` // Source IP
+	Noise float32 `json:"noise"` // Noise value
+	Time  int64   `json:"time"` // Timestamp (ms)
+	From  string  `json:"from"` // Source IP
 }
 
 func main() {
@@ -117,10 +115,10 @@ func main() {
 			log.Printf("Unmarshal payload error:%v", err)
 		}
 
-		// 2.generate y3-codec format
+		// 2.generate json-codec format
 		noise := float32(raw["noise"])
 		data := NoiseData{Noise: noise, Time: utils.Now(), From: utils.IpAddr()}
-		sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
+		sendingBuf, _ := json.Marshal(data)
 
     // 3.send data to remote workflow engine
 		_, err = writer.Write(sendingBuf)
@@ -140,7 +138,7 @@ func main() {
 }
 ```
 
-从这个例子代码可见，我们假设从IoT设备输出了一个JSON数据`{"noise":456}`到我们的Source服务中，通过使用[y3-codec](https://github.com/yomorun/y3-codec-golang)进行格式转换后便可以通过Write发送给在远端的工作流引擎(zipper)，该地址通过环境变量`YOMO_SOURCE_MQTT_ZIPPER_ADDR`定义，而yomo-source本身这个服务则通过`YOMO_SOURCE_MQTT_SERVER_ADDR`定义，当然你也可以不设置，默认监听本地的1883端口。
+从这个例子代码可见，我们假设从IoT设备输出了一个JSON数据`{"noise":456}`到我们的Source服务中，通过使用 JSON 进行格式转换后便可以通过Write发送给在远端的工作流引擎(zipper)，该地址通过环境变量`YOMO_SOURCE_MQTT_ZIPPER_ADDR`定义，而yomo-source本身这个服务则通过`YOMO_SOURCE_MQTT_SERVER_ADDR`定义，当然你也可以不设置，默认监听本地的1883端口。
 
 如果想现在就运行起这个服务，我们可以简单的运行下下面命令:
 

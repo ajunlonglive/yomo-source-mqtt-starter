@@ -1,6 +1,6 @@
 # MQTT-API兼容的YoMo-Source
 
-通过兼容[MQTT](https://mqtt.org/mqtt-specification/)的API协议，YoMo-Source与支持该协议的IoT设备进行连接，并实时高效地把数据以QUIC流的形式传输到YCloud云或者其它部署了YoMo-Zipper的节点。
+通过兼容[MQTT](https://mqtt.org/mqtt-specification/)的 API 协议，YoMo-Source 与支持该协议的IoT设备进行连接，并实时高效地把数据以 QUIC 流的形式传输到 YCloud 云或者其它部署了 YoMo-Zipper 的节点。
 
 ![schema](https://github.com/yomorun/yomo-source-mqtt-starter/blob/main/docs/schema.jpg?raw=true)
 
@@ -8,13 +8,13 @@
 
 ### 例子 (噪音)
 
-在这个例子中，假设`噪音传感器`以MQTT协议的方式向外传输主题为`NOISE`的器音数据，格式如下：
+在这个例子中，假设`噪音传感器`以 MQTT 协议的方式向外传输主题为 `NOISE` 的器音数据，格式如下：
 
 ```json
 {"noise":416}
 ```
 
-那么，我们可以通过引用[yomo-source-mqtt-starter](https://github.com/yomorun/yomo-source-mqtt-starter)组件来创建一个yomo-source来接收噪音传感器发送的数据，并传输给部署了yomo-zipper服务的云端。
+那么，我们可以通过引用[yomo-source-mqtt-starter](https://github.com/yomorun/yomo-source-mqtt-starter)组件来创建一个 yomo-source 来接收噪音传感器发送的数据，并传输给部署了 yomo-zipper 服务的云端。
 
 #### 1. 初始化项目
 
@@ -33,16 +33,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/yomorun/y3-codec-golang"
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/utils"
-
 	"github.com/yomorun/yomo-source-mqtt-starter/pkg/receiver"
 )
 
 type NoiseData struct {
-	Noise float32 `y3:"0x11"` // Noise value
-	Time  int64   `y3:"0x12"` // Timestamp (ms)
-	From  string  `y3:"0x13"` // Source IP
+	Noise float32 `json:"noise"` // Noise value
+	Time  int64   `json:"time"` // Timestamp (ms)
+	From  string  `json:"from"` // Source IP
 }
 
 func main() {
@@ -56,10 +54,10 @@ func main() {
 			log.Printf("Unmarshal payload error:%v", err)
 		}
 
-		// generate y3-codec format
+		// generate json-codec format
 		noise := float32(raw["noise"])
 		data := NoiseData{Noise: noise, Time: utils.Now(), From: utils.IpAddr()}
-		sendingBuf, _ := y3.NewCodec(0x10).Marshal(data)
+		sendingBuf, _ := json.Marshal(data)
 
 		_, err = writer.Write(sendingBuf)
 		if err != nil {
@@ -80,7 +78,7 @@ func main() {
 
 - YOMO_SOURCE_MQTT_ZIPPER_ADDR 设置远程yomo-zipper的服务地址。
 - YOMO_SOURCE_MQTT_SERVER_ADDR 设置本yomo-source的对外服务地址。
-- 发送的数据需要使用y3-codec进行编码后再进行传输，通过定义一个结构体NoiseData传输更多的信息。
+- 发送的数据需要使用 JSON 进行编码后再进行传输，通过定义一个结构体NoiseData传输更多的信息。
 
 #### 3. 创建app.go
 

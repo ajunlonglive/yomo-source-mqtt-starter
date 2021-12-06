@@ -9,8 +9,10 @@ import (
 
 	"go.uber.org/zap"
 
-	cl "github.com/yomorun/yomo/pkg/client"
+	"github.com/yomorun/yomo"
 )
+
+const DataTag uint8 = 0x33
 
 type ISourceWriter interface {
 	Write(b []byte) (int, error)
@@ -35,7 +37,7 @@ func NewSourceWriter(w io.Writer) ISourceWriter {
 
 type ISourceClient interface {
 	GetWriter() ISourceWriter
-	Create() cl.SourceClient
+	Create() yomo.Source
 	Close() error
 	Retry()
 	Init()
@@ -44,7 +46,7 @@ type ISourceClient interface {
 type sourceClientImpl struct {
 	zipperAddr string
 	appName    string
-	cli        cl.SourceClient
+	cli        yomo.Source
 
 	mutexCli sync.Mutex
 
@@ -74,7 +76,7 @@ func (s *sourceClientImpl) Close() error {
 }
 
 func (s *sourceClientImpl) Retry() {
-	s.cli.Retry()
+	// s.cli.Retry()
 }
 
 func (s *sourceClientImpl) GetWriter() ISourceWriter {
@@ -86,7 +88,7 @@ func (s *sourceClientImpl) GetWriter() ISourceWriter {
 	return NewSourceWriter(s.cli)
 }
 
-func (s *sourceClientImpl) Create() cl.SourceClient {
+func (s *sourceClientImpl) Create() yomo.Source {
 	var err error
 
 	s.mutexCli.Lock()
@@ -94,13 +96,18 @@ func (s *sourceClientImpl) Create() cl.SourceClient {
 
 	if s.cli == nil {
 		for {
-			ip, port := s.splitZipperAddr()
-			s.cli, err = cl.NewSource(s.appName).Connect(ip, port)
+			source := yomo.NewSource(
+				"yomo-source",
+				yomo.WithZipperAddr(s.zipperAddr),
+			)
+			err = source.Connect()
 			if err != nil {
-				log.Error("NewClient error", zap.String("zipperAddr", s.zipperAddr), zap.Error(err))
+				log.Error("[source] ❌ Emit the data to YoMo-Zipper failure with err: %v", zap.Error(err))
 				time.Sleep(time.Duration(s.clientErrorInterval) * time.Millisecond)
 				continue
 			}
+			source.SetDataTag(DataTag)
+			s.cli = source
 			log.Info("connect to zipper", zap.String("zipperAddr", s.zipperAddr))
 			break
 		}
